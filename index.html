@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RatePeak | Quick Rate Quote</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-zinc-900 min-h-screen flex items-center justify-center p-4">
+
+  <!-- Centered Lead Gen Card -->
+  <div class="w-full max-w-md p-8 border border-zinc-200 rounded-2xl shadow-xl bg-white">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-bold tracking-tight text-red-600">Fast Mortgage Match</h2>
+      <span id="step-indicator" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+        Step 1 of 3
+      </span>
+    </div>
+
+    <form id="leadForm" novalidate>
+      <!-- Hidden Compliance & Attribution Tokens -->
+      <input type="hidden" name="leadid_token" id="leadid_token" value="MOCK-JORNAYA-TOKEN-12345">
+      <input type="hidden" name="trustedform_cert_url" id="trustedform_cert_url" value="https://cert.trustedform.com/mock-cert-67890">
+
+      <!-- Step 1: Loan Purpose & Property Numbers -->
+      <div class="step block space-y-4" id="step-1">
+        
+        <!-- Purchase vs Refinance Segmented Toggle -->
+        <div>
+          <label class="block text-sm font-semibold text-zinc-800 mb-1.5">What is your loan goal?</label>
+          <div class="grid grid-cols-2 p-1 bg-zinc-100 rounded-lg border border-zinc-200">
+            <button type="button" id="btn-toggle-purchase" onclick="setLoanType('purchase')" class="py-2 text-xs font-bold rounded-md bg-white text-red-600 shadow-sm transition">
+              Purchase
+            </button>
+            <button type="button" id="btn-toggle-refinance" onclick="setLoanType('refinance')" class="py-2 text-xs font-bold rounded-md text-zinc-600 hover:text-zinc-900 transition">
+              Refinance
+            </button>
+          </div>
+          <input type="hidden" id="loan_purpose" name="loan_purpose" value="purchase">
+        </div>
+
+        <!-- Property Value Field (Dynamic Label) -->
+        <div>
+          <label id="property_value_label" for="property_value" class="block text-sm font-semibold text-zinc-800 mb-1.5">
+            Estimated Purchase Price ($)
+          </label>
+          <input type="number" id="property_value" name="property_value" value="450000" min="50000" step="5000" required class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+        </div>
+
+        <!-- Purchase-Only: Down Payment -->
+        <div id="purchase_fields" class="block">
+          <label for="down_payment" class="block text-sm font-semibold text-zinc-800 mb-1.5">Estimated Down Payment ($)</label>
+          <input type="number" id="down_payment" name="down_payment" value="90000" min="0" step="1000" required class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+        </div>
+
+        <!-- Refinance-Only: Balance & Goal -->
+        <div id="refinance_fields" class="hidden space-y-4">
+          <div>
+            <label for="current_balance" class="block text-sm font-semibold text-zinc-800 mb-1.5">Current Mortgage Balance ($)</label>
+            <input type="number" id="current_balance" name="current_balance" value="320000" min="10000" step="5000" disabled class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+          </div>
+          <div>
+            <label for="refi_goal" class="block text-sm font-semibold text-zinc-800 mb-1.5">Primary Refinance Goal</label>
+            <select id="refi_goal" name="refi_goal" disabled class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+              <option value="lower_monthly_payment">Lower Monthly Payment</option>
+              <option value="cash_out_equity">Take Cash Out of Home</option>
+              <option value="shorten_term">Shorten Loan Term</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" onclick="validateAndNext(1, 2)" class="w-full mt-2 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-sm hover:shadow transition active:scale-[0.99]">
+          Continue &rarr;
+        </button>
+      </div>
+
+      <!-- Step 2: Financial Qualification -->
+      <div class="step hidden space-y-4" id="step-2">
+        <div>
+          <label for="credit_score" class="block text-sm font-semibold text-zinc-800 mb-1.5">Credit Score Tier</label>
+          <select id="credit_score" name="credit_score" required class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+            <option value="excellent">Excellent (740+)</option>
+            <option value="good">Good (680 - 739)</option>
+            <option value="fair">Fair (620 - 679)</option>
+            <option value="poor">Needs Help (&lt; 620)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="zip_code" class="block text-sm font-semibold text-zinc-800 mb-1.5">Property ZIP Code</label>
+          <input type="text" id="zip_code" name="zip_code" placeholder="78701" pattern="[0-9]{5}" maxlength="5" required class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+        </div>
+
+        <div class="flex gap-2 mt-2">
+          <button type="button" onclick="showStep(1)" class="w-1/3 py-3 px-4 border border-zinc-300 text-zinc-700 font-semibold rounded-lg hover:bg-zinc-50 transition">
+            Back
+          </button>
+          <button type="button" onclick="validateAndNext(2, 3)" class="w-2/3 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-sm hover:shadow transition active:scale-[0.99]">
+            Next &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Contact & TCPA Consent -->
+      <div class="step hidden space-y-4" id="step-3">
+        <div>
+          <label for="full_name" class="block text-sm font-semibold text-zinc-800 mb-1.5">Full Name</label>
+          <input type="text" id="full_name" name="full_name" placeholder="Jane Doe" required class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+        </div>
+
+        <div>
+          <label for="phone" class="block text-sm font-semibold text-zinc-800 mb-1.5">Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="(512) 555-0199" required class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-semibold text-zinc-800 mb-1.5">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="jane@example.com" required class="w-full px-3.5 py-2.5 border border-zinc-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 transition">
+        </div>
+
+        <label class="flex items-start gap-2.5 text-xs text-zinc-500 leading-relaxed cursor-pointer pt-1">
+          <input type="checkbox" id="tcpa" name="tcpa" required checked class="mt-0.5 h-4 w-4 rounded border-zinc-300 text-red-600 focus:ring-red-600">
+          <span>I consent to receive calls and text messages from up to 4 lending partners regarding rates. Consent is not a condition of purchase.</span>
+        </label>
+
+        <div class="flex gap-2 mt-2">
+          <button type="button" onclick="showStep(2)" class="w-1/3 py-3 px-4 border border-zinc-300 text-zinc-700 font-semibold rounded-lg hover:bg-zinc-50 transition">
+            Back
+          </button>
+          <button type="submit" class="w-2/3 py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-sm hover:shadow transition active:scale-[0.99]">
+            Submit Lead
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Success View -->
+    <div class="step hidden" id="step-success">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <h3 class="text-base font-bold text-emerald-600">Lead Dispatched Successfully!</h3>
+      </div>
+      <p class="text-xs text-zinc-600 mb-3">Payload formatted for CRM / Webhook ingestion:</p>
+      <pre id="jsonOutput" class="bg-zinc-50 border border-zinc-200 text-zinc-800 p-3.5 rounded-lg text-xs font-mono overflow-x-auto max-h-72"></pre>
+      
+      <button type="button" onclick="resetForm()" class="w-full mt-4 py-2 px-3 border border-zinc-300 text-zinc-700 font-semibold rounded-lg text-sm hover:bg-zinc-50 transition">
+        Test Another Lead
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let activeLoanType = 'purchase';
+
+    function setLoanType(type) {
+      activeLoanType = type;
+      document.getElementById('loan_purpose').value = type;
+
+      const btnPurchase = document.getElementById('btn-toggle-purchase');
+      const btnRefi = document.getElementById('btn-toggle-refinance');
+      const propLabel = document.getElementById('property_value_label');
+      const purchaseFields = document.getElementById('purchase_fields');
+      const refiFields = document.getElementById('refinance_fields');
+      
+      const downPaymentInput = document.getElementById('down_payment');
+      const balanceInput = document.getElementById('current_balance');
+      const refiGoalSelect = document.getElementById('refi_goal');
+
+      if (type === 'purchase') {
+        btnPurchase.className = 'py-2 text-xs font-bold rounded-md bg-white text-red-600 shadow-sm transition';
+        btnRefi.className = 'py-2 text-xs font-bold rounded-md text-zinc-600 hover:text-zinc-900 transition';
+        propLabel.textContent = 'Estimated Purchase Price ($)';
+
+        purchaseFields.classList.remove('hidden');
+        refiFields.classList.add('hidden');
+
+        downPaymentInput.disabled = false;
+        balanceInput.disabled = true;
+        refiGoalSelect.disabled = true;
+      } else {
+        btnRefi.className = 'py-2 text-xs font-bold rounded-md bg-white text-red-600 shadow-sm transition';
+        btnPurchase.className = 'py-2 text-xs font-bold rounded-md text-zinc-600 hover:text-zinc-900 transition';
+        propLabel.textContent = 'Estimated Home Value ($)';
+
+        purchaseFields.classList.add('hidden');
+        refiFields.classList.remove('hidden');
+
+        downPaymentInput.disabled = true;
+        balanceInput.disabled = false;
+        refiGoalSelect.disabled = false;
+      }
+    }
+
+    function showStep(stepNum) {
+      document.querySelectorAll('.step').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+      });
+
+      const target = document.getElementById('step-' + stepNum);
+      if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('block');
+      }
+
+      const indicator = document.getElementById('step-indicator');
+      if (indicator && typeof stepNum === 'number') {
+        indicator.textContent = `Step ${stepNum} of 3`;
+      }
+    }
+
+    function validateAndNext(currentStep, nextStep) {
+      const stepContainer = document.getElementById('step-' + currentStep);
+      const inputs = stepContainer.querySelectorAll('input:not([disabled]), select:not([disabled])');
+      
+      for (const input of inputs) {
+        if (!input.checkValidity()) {
+          input.reportValidity();
+          return;
+        }
+      }
+      showStep(nextStep);
+    }
+
+    function resetForm() {
+      document.getElementById('leadForm').reset();
+      setLoanType('purchase');
+      showStep(1);
+    }
+
+    document.getElementById('leadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const tcpaCheckbox = document.getElementById('tcpa');
+      if (!tcpaCheckbox.checked) {
+        tcpaCheckbox.reportValidity();
+        return;
+      }
+
+      const formData = new FormData(this);
+      const propVal = Number(formData.get('property_value')) || 0;
+      let requestedLoan = 0;
+
+      if (activeLoanType === 'purchase') {
+        const downPayment = Number(formData.get('down_payment')) || 0;
+        requestedLoan = Math.max(0, propVal - downPayment);
+      } else {
+        requestedLoan = Number(formData.get('current_balance')) || 0;
+      }
+
+      const ltv = propVal > 0 ? Number(((requestedLoan / propVal) * 100).toFixed(1)) : 0;
+
+      const payload = {
+        timestamp: new Date().toISOString(),
+        compliance: {
+          jornaya_lead_id: formData.get('leadid_token'),
+          trustedform_cert_url: formData.get('trustedform_cert_url'),
+          tcpa_consent: tcpaCheckbox.checked
+        },
+        borrower: {
+          name: formData.get('full_name'),
+          phone: formData.get('phone'),
+          email: formData.get('email'),
+          zip: formData.get('zip_code')
+        },
+        loan_profile: {
+          purpose: activeLoanType,
+          property_value: propVal,
+          requested_loan_amount: requestedLoan,
+          ltv_percentage: ltv,
+          credit_tier: formData.get('credit_score'),
+          ...(activeLoanType === 'purchase' 
+            ? { down_payment: Number(formData.get('down_payment')) }
+            : { current_mortgage_balance: Number(formData.get('current_balance')), refi_goal: formData.get('refi_goal') }
+          )
+        }
+      };
+
+      document.querySelectorAll('.step').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+      });
+
+      const indicator = document.getElementById('step-indicator');
+      if (indicator) indicator.textContent = 'Dispatched';
+
+      const successEl = document.getElementById('step-success');
+      successEl.classList.remove('hidden');
+      successEl.classList.add('block');
+
+      document.getElementById('jsonOutput').textContent = JSON.stringify(payload, null, 2);
+    });
+  </script>
+</body>
+</html>
